@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import SDWebImage
 
 class SearchViewController: UITableViewController {
     
@@ -65,6 +66,13 @@ class SearchViewController: UITableViewController {
         tableView.register(NothingCell.self, forCellReuseIdentifier: nothingIdentifier)
     }
     
+    func showNetworkError() {
+        let alert = UIAlertController(title: "WHoops!", message: "There was an error accessing the iTunes store, please try again!.", preferredStyle: .alert)
+        
+        let action = UIAlertAction(title: "OK", style: .default, handler: nil)
+        alert.addAction(action)
+        present(alert, animated: true, completion: nil)
+    }
     
 }
 
@@ -79,6 +87,10 @@ extension SearchViewController {
         
         cell.songLabel.text = searchResults[indexPath.row].name
         cell.artistLabel.text = searchResults[indexPath.row].artistName
+        if let url = URL(string: searchResults[indexPath.row].storeURL ?? ""){
+            cell.albumImage.sd_setImage(with: url, completed: nil)
+            
+        }
         
         
         return cell
@@ -100,20 +112,27 @@ extension SearchViewController {
 extension SearchViewController: UISearchResultsUpdating{
     func updateSearchResults(for searchController: UISearchController) {
         searchResults = []
+        hasSearched = true
         let searchText = searchController.searchBar.text!
         
-        if searchText.count >= 1 {
-            for i in 0...searchText.count {
-                let searchResult = SearchResult()
-                searchResult.name = String(i)
-                searchResult.artistName = searchController.searchBar.text!
-                searchResults.append(searchResult)
-            }
-            hasSearched = true
-        } else {
-            hasSearched = false
+        let url = Service.iTunesURL(searchText: searchText)
+        
+        if let jsonString = Service.performStoreRequest(with: url) {
+            print("Received JSON string '\(jsonString)'")
         }
+        print("URL: '\(url)'")
+        
+        if let data = Service.performStoreRequest(with: url) {  // Modified
+            searchResults = Service.parse(data: data)
+//            searchResults.sort { $0 < $1 }
+            searchResults.sort(by: <)
+            }
+            // New line
+        }
+        //        else {
+        //            let error = Service.showNetworkError()
+        //            present(error, animated: true, completion: nil)
+        //        }
         
     }
     
-}

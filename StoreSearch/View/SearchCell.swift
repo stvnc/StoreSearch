@@ -8,7 +8,10 @@
 
 import UIKit
 
+
 class SearchCell: UITableViewCell {
+    
+    var searchResult: SearchResult?
     
     let albumImage: UIImageView = {
        let iv = UIImageView()
